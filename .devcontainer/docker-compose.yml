@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+
+  # ── Dev container (VSCode s'y connecte) ─────────────────────────────────────
+  devcontainer:
+    image: mcr.microsoft.com/devcontainers/python:3.14
+    volumes:
+      - ..:/workspaces/ha-toniebox:cached
+      - ha-config:/config
+    command: sleep infinity
+    environment:
+      - PYTHONPATH=/workspaces/ha-toniebox
+
+  # ── Home Assistant ────────────────────────────────────────────────────────────
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    volumes:
+      - ha-config:/config
+      # ✅ Montage direct — HA voit toujours la dernière version de ton code
+      - ../custom_components/tonies:/config/custom_components/tonies:ro
+      # ✅ Blueprints aussi en direct
+      - ../blueprints/automation/tonies:/config/blueprints/automation/tonies:ro
+    ports:
+      - "8123:8123"
+    environment:
+      - TZ=Europe/Paris
+    restart: unless-stopped
+
+volumes:
+  ha-config:

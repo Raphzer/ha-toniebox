@@ -1,0 +1,66 @@
+blueprint:
+  name: "Tonies — Extinction batterie faible"
+  description: >
+    Envoie la commande sleep à la Toniebox lorsque la batterie
+    descend en-dessous d'un seuil configurable.
+  domain: automation
+  input:
+    battery_sensor:
+      name: Capteur batterie
+      description: Le sensor batterie de la Toniebox
+      selector:
+        entity:
+          domain: sensor
+          device_class: battery
+          integration: tonies
+    sleep_switch:
+      name: Switch Sleep
+      description: Le switch Sleep de la même Toniebox
+      selector:
+        entity:
+          domain: switch
+          integration: tonies
+    threshold:
+      name: Seuil batterie (%)
+      default: 15
+      selector:
+        number:
+          min: 5
+          max: 50
+          unit_of_measurement: "%"
+    notify:
+      name: Envoyer une notification ?
+      default: true
+      selector:
+        boolean: {}
+    notify_target:
+      name: Cible notification (optionnel)
+      description: "Ex: notify.mobile_app_mon_telephone"
+      default: "notify.persistent_notification"
+      selector:
+        text: {}
+
+trigger:
+  - platform: numeric_state
+    entity_id: !input battery_sensor
+    below: !input threshold
+
+condition:
+  - condition: state
+    entity_id: !input sleep_switch
+    state: "off"
+
+action:
+  - if:
+      - condition: template
+        value_template: "{{ notify }}"
+    then:
+      - service: !input notify_target
+        data:
+          title: "Toniebox — Batterie faible"
+          message: >
+            La batterie est à {{ states(battery_sensor) }}%.
+            La Toniebox va s'éteindre.
+  - service: switch.turn_on
+    target:
+      entity_id: !input sleep_switch

@@ -1,0 +1,69 @@
+blueprint:
+  name: "Tonies — Volume mode nuit"
+  description: >
+    Réduit automatiquement le volume de la Toniebox à l'heure du coucher,
+    et le restaure le matin.
+  domain: automation
+  input:
+    toniebox:
+      name: Toniebox
+      description: La Toniebox à contrôler
+      selector:
+        entity:
+          domain: media_player
+          integration: tonies
+    bedtime:
+      name: Heure du coucher
+      default: "20:00:00"
+      selector:
+        time: {}
+    wake_time:
+      name: Heure du réveil
+      default: "07:00:00"
+      selector:
+        time: {}
+    night_volume:
+      name: Volume nuit (0–100)
+      default: 30
+      selector:
+        number:
+          min: 0
+          max: 100
+          unit_of_measurement: "%"
+    day_volume:
+      name: Volume jour (0–100)
+      default: 70
+      selector:
+        number:
+          min: 0
+          max: 100
+          unit_of_measurement: "%"
+
+trigger:
+  - platform: time
+    at: !input bedtime
+    id: bedtime
+  - platform: time
+    at: !input wake_time
+    id: wake_time
+
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: bedtime
+        sequence:
+          - service: media_player.volume_set
+            target:
+              entity_id: !input toniebox
+            data:
+              volume_level: "{{ (night_volume | int) / 100 }}"
+      - conditions:
+          - condition: trigger
+            id: wake_time
+        sequence:
+          - service: media_player.volume_set
+            target:
+              entity_id: !input toniebox
+            data:
+              volume_level: "{{ (day_volume | int) / 100 }}"

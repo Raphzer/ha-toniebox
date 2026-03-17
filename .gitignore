@@ -215,3 +215,6 @@ config/*.db
 
 # VSCode
 .vscode/settings.json
+
+#Macos
+.DS_Store

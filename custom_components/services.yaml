@@ -1,0 +1,7 @@
+get_tonies_list:
+  name: Get Tonies list
+  description: >
+    Retrieves the full catalogue of owned Tonies (content and creative) and fires
+    a 'tonies_list_result' event on the HA event bus with the complete list.
+    Use this instead of reading sensor attributes to avoid the 16KB HA DB limit.
+  fields: {}
