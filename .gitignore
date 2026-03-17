@@ -205,3 +205,13 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Home Assistant runtime files (generated in /config during dev)
+config/home-assistant.log
+config/.storage/
+config/tts/
+config/deps/
+config/*.db
+
+# VSCode
+.vscode/settings.json
