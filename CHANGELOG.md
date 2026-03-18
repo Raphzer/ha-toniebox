@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] - 2026-03-18
+
+### Fixed
+- Sorted `manifest.json` keys per hassfest requirements (`domain`, `name`, then alphabetical)
+- Applied ruff formatting to all integration files
+
 ## [0.1.0] - 2026-03-18
 
 ### Added
