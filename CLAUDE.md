@@ -4,7 +4,7 @@
 
 Home Assistant custom integration for Toniebox devices, installable via HACS.
 Domain: `tonies` | Version: `0.1.0` | Min HA: `2026.1.0`
-Depends on: `tonies-api` (private library at `Raphzer/tonies-api` on GitHub)
+Depends on: `tonies-api>=0.1.4` (PyPI — source at `Raphzer/tonies-api` on GitHub)
 
 ---
 
@@ -25,9 +25,12 @@ Two distinct Toniebox generations with different capabilities:
 | Sleep command | No | Yes |
 | Active Tonie sensor | No | Yes |
 | Online status | No | Yes |
-| Volume steps | 25/50/75/100% | 1% increments (25–100%) |
-| LED control | Yes | Yes |
-| Headphone volume | Yes (25% steps) | Yes (1% steps) |
+| Speaker volume | 25/50/75/100% (snapped) | 25–100% (1% steps) |
+| LED control | Select (on/dimmed/off) | Number (0–100%, light ring) |
+| Headphone volume | 25/50/75/100% (snapped) | 25–100% (1% steps) |
+| Bedtime speaker volume | No | 25–100% (1% steps) |
+| Bedtime headphone volume | No | 25–100% (1% steps) |
+| Bedtime LED brightness | No | 0–100% (1% steps) |
 
 `is_tng` property on `ToniesBaseEntity` gates TNG-only features.
 
@@ -61,8 +64,8 @@ custom_components/tonies/
 ├── media_player.py    # Media player platform (main entity per box)
 ├── sensor.py          # Battery, Active Tonie, Online status, Library count
 ├── switch.py          # Sleep switch (TNG only, momentary)
-├── select.py          # LED brightness (on/dimmed/off)
-├── number.py          # Headphone volume (25–100%)
+├── select.py          # LED brightness select (on/dimmed/off) — Classic only
+├── number.py          # Headphone volume (all) + speaker volume, LED brightness, bedtime controls (TNG only)
 └── translations/
     ├── en.json
     └── fr.json
@@ -70,7 +73,8 @@ custom_components/tonies/
 blueprints/automation/tonies/
 ├── volume_bedtime.yaml       # Reduce volume at bedtime, restore at wake
 ├── notify_tonie_change.yaml  # Notify when Tonie changes
-└── low_battery_sleep.yaml    # Auto-sleep on low battery
+├── low_battery_sleep.yaml    # Auto-sleep on low battery
+└── sleep_schedule.yaml       # Enforce quiet hours (TNG only)
 
 .github/
 ├── workflows/lint.yml        # Ruff check + format (push/PR)
@@ -93,7 +97,7 @@ Central data manager. Owns:
 - Polling loop for Classic boxes
 - WebSocket listener for TNG boxes with MQTT topic parsing
 - Per-box `ws_state` dict: `online`, `battery`, `charging`, `tonie_id`, `tonie_name`, `tonie_image`, `headphones`
-- Service methods: `sleep_box`, `set_volume`, `set_headphone_volume`, `set_led`, `set_lightring_brightness`, `set_bedtime_volume`
+- Service methods: `sleep_box`, `set_volume`, `set_headphone_volume`, `set_led`, `set_lightring_brightness`, `set_bedtime_volume`, `set_bedtime_headphone_volume`, `set_bedtime_lightring_brightness`
 
 ### `ToniesBaseEntity` (`entity.py`)
 Base for all entities. Provides `_box`, `_ws` (ws_state dict), `is_tng`, and `device_info` with manufacturer "Boxine".
@@ -172,7 +176,8 @@ Uses **Ruff** for both formatting and linting. CI enforces `ruff check` and `ruf
 - **`ToniesLibrarySensor`** does not extend `CoordinatorEntity` — it is a plain `SensorEntity` that calls `super().__init__()` and subscribes manually via `async_added_to_hass`. It has no `device_info` (floating entity by design)
 - **`config/configuration.yaml`** is the only config file preserved in `.gitignore` (local dev only)
 - **`homeassistant` package excluded** from Dependabot auto-updates (pinned manually)
-- **`UNIQUE_ID_NUMBER_VOLUME`** in `const.py` is defined but unused — do not reference it for new entities; use `UNIQUE_ID_NUMBER_HP_VOL` for headphone volume
+- **`select.py` LED is Classic-only** — TNG boxes use `TngLedBrightnessNumber` (light ring, 0–100%); never create `ToniesLedSelect` for a TNG box
+- **`number.py` TNG entities**: `TngSpeakerVolumeNumber`, `TngLedBrightnessNumber`, `TngBedtimeSpeakerVolumeNumber`, `TngBedtimeHeadphoneVolumeNumber`, `TngBedtimeLedBrightnessNumber` — all gated by `is_tng` in `async_setup_entry`
 
 ---
 
