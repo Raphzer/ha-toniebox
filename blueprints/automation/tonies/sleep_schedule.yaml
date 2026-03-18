@@ -1,0 +1,70 @@
+blueprint:
+  name: "Tonies — Plage horaire de silence (TNG)"
+  description: >
+    Éteint automatiquement la Toniebox TNG en dehors des heures autorisées.
+    Si la Toniebox est allumée pendant la plage de silence, elle est éteinte immédiatement.
+  domain: automation
+  input:
+    media_player:
+      name: Toniebox (Media Player)
+      description: Le media player de la Toniebox TNG à contrôler
+      selector:
+        entity:
+          domain: media_player
+          integration: tonies
+    sleep_switch:
+      name: Switch Sleep
+      description: Le switch Sleep de la même Toniebox TNG
+      selector:
+        entity:
+          domain: switch
+          integration: tonies
+    sleep_time:
+      name: Heure de début du silence
+      default: "21:30:00"
+      selector:
+        time: {}
+    wake_time:
+      name: Heure de fin du silence
+      default: "07:00:00"
+      selector:
+        time: {}
+
+trigger:
+  # Déclenchement à l'heure de début du silence
+  - platform: time
+    at: !input sleep_time
+    id: schedule_start
+
+  # Déclenchement à chaque fois que la Toniebox se met à jouer
+  - platform: state
+    entity_id: !input media_player
+    to: "playing"
+    id: toniebox_started
+
+condition:
+  - condition: or
+    conditions:
+      # Déclenchement programmé → toujours exécuter
+      - condition: trigger
+        id: schedule_start
+      # Déclenchement sur état "playing" → seulement pendant la plage de silence
+      - condition: and
+        conditions:
+          - condition: trigger
+            id: toniebox_started
+          - condition: template
+            value_template: >
+              {% set sleep = today_at(sleep_time) %}
+              {% set wake  = today_at(wake_time) %}
+              {% set now_t = now() %}
+              {% if sleep > wake %}
+                {{ now_t >= sleep or now_t < wake }}
+              {% else %}
+                {{ sleep <= now_t < wake }}
+              {% endif %}
+
+action:
+  - service: switch.turn_on
+    target:
+      entity_id: !input sleep_switch
