@@ -1,4 +1,5 @@
 """Data coordinator for Tonies integration."""
+
 from __future__ import annotations
 
 import asyncio
@@ -91,7 +92,11 @@ class ToniesCoordinator(DataUpdateCoordinator[ToniesData]):
             raise UpdateFailed("API client not initialised")
         try:
             self.data.boxes = await self._client.tonies.get_households_boxes()
-            _LOGGER.debug("Fetched %d box(es): %s", len(self.data.boxes), [b.name for b in self.data.boxes])
+            _LOGGER.debug(
+                "Fetched %d box(es): %s",
+                len(self.data.boxes),
+                [b.name for b in self.data.boxes],
+            )
 
             households = await self._client.tonies.get_tonies()
             _LOGGER.debug("Fetched %d household(s)", len(households))
@@ -128,6 +133,7 @@ class ToniesCoordinator(DataUpdateCoordinator[ToniesData]):
         certs_data: bytes = await self.hass.async_add_executor_job(_read_certs)
 
         import ssl
+
         _orig = ssl.create_default_context
 
         def _patched(*args, **kwargs):
@@ -200,7 +206,9 @@ class ToniesCoordinator(DataUpdateCoordinator[ToniesData]):
         if "online-state" in event:
             # payload: {'onlineState': 'online'} or {'onlineState': 'offline'}
             if isinstance(payload, dict):
-                state["online"] = str(payload.get("onlineState", "")).lower() == "online"
+                state["online"] = (
+                    str(payload.get("onlineState", "")).lower() == "online"
+                )
             elif isinstance(payload, str):
                 state["online"] = payload.lower() == "online"
             else:
@@ -222,12 +230,12 @@ class ToniesCoordinator(DataUpdateCoordinator[ToniesData]):
             if isinstance(payload, dict):
                 tonie = payload.get("tonie")
                 if isinstance(tonie, dict):
-                    state["tonie_id"]    = tonie.get("id")
-                    state["tonie_name"]  = tonie.get("name") or tonie.get("tonieName")
+                    state["tonie_id"] = tonie.get("id")
+                    state["tonie_name"] = tonie.get("name") or tonie.get("tonieName")
                     state["tonie_image"] = tonie.get("imageUrl") or tonie.get("image")
                 elif tonie is None:
-                    state["tonie_id"]    = None
-                    state["tonie_name"]  = None
+                    state["tonie_id"] = None
+                    state["tonie_name"] = None
                     state["tonie_image"] = None
 
         elif "metrics/headphones" in event:
@@ -262,24 +270,28 @@ class ToniesCoordinator(DataUpdateCoordinator[ToniesData]):
             household_id = hwt.id
             for tonie in hwt.content_tonies or []:
                 # ContentTonie uses .title (not .name)
-                result.append({
-                    "id":           tonie.id,
-                    "name":         tonie.title,
-                    "image_url":    tonie.image_url,
-                    "cover_url":    tonie.cover_url,
-                    "household_id": household_id,
-                    "type":         "content",
-                })
+                result.append(
+                    {
+                        "id": tonie.id,
+                        "name": tonie.title,
+                        "image_url": tonie.image_url,
+                        "cover_url": tonie.cover_url,
+                        "household_id": household_id,
+                        "type": "content",
+                    }
+                )
             for tonie in hwt.creative_tonies or []:
                 # CreativeTonie uses .name
-                result.append({
-                    "id":           tonie.id,
-                    "name":         tonie.name,
-                    "image_url":    tonie.image_url,
-                    "household_id": household_id,
-                    "type":         "creative",
-                    "live":         tonie.live,
-                })
+                result.append(
+                    {
+                        "id": tonie.id,
+                        "name": tonie.name,
+                        "image_url": tonie.image_url,
+                        "household_id": household_id,
+                        "type": "creative",
+                        "live": tonie.live,
+                    }
+                )
         return result
 
     # ------------------------------------------------------------------
@@ -298,7 +310,9 @@ class ToniesCoordinator(DataUpdateCoordinator[ToniesData]):
             raise RuntimeError("API client not initialised")
         await self._client.tonies.set_max_volume(household_id, box_id, volume)
 
-    async def set_headphone_volume(self, household_id: str, box_id: str, volume: int) -> None:
+    async def set_headphone_volume(
+        self, household_id: str, box_id: str, volume: int
+    ) -> None:
         """Set max headphone volume. Classic: snapped to 25/50/75/100."""
         if self._client is None:
             raise RuntimeError("API client not initialised")
@@ -311,22 +325,36 @@ class ToniesCoordinator(DataUpdateCoordinator[ToniesData]):
         await self._client.tonies.set_led_brightness(household_id, box_id, level)
 
     # TNG-only commands
-    async def set_lightring_brightness(self, household_id: str, box_id: str, brightness: int) -> None:
+    async def set_lightring_brightness(
+        self, household_id: str, box_id: str, brightness: int
+    ) -> None:
         if self._client is None:
             raise RuntimeError("API client not initialised")
-        await self._client.tonies.set_lightring_brightness(household_id, box_id, brightness)
+        await self._client.tonies.set_lightring_brightness(
+            household_id, box_id, brightness
+        )
 
-    async def set_bedtime_volume(self, household_id: str, box_id: str, volume: int) -> None:
+    async def set_bedtime_volume(
+        self, household_id: str, box_id: str, volume: int
+    ) -> None:
         if self._client is None:
             raise RuntimeError("API client not initialised")
         await self._client.tonies.set_bedtime_max_volume(household_id, box_id, volume)
 
-    async def set_bedtime_headphone_volume(self, household_id: str, box_id: str, volume: int) -> None:
+    async def set_bedtime_headphone_volume(
+        self, household_id: str, box_id: str, volume: int
+    ) -> None:
         if self._client is None:
             raise RuntimeError("API client not initialised")
-        await self._client.tonies.set_bedtime_headphone_max_volume(household_id, box_id, volume)
+        await self._client.tonies.set_bedtime_headphone_max_volume(
+            household_id, box_id, volume
+        )
 
-    async def set_bedtime_lightring_brightness(self, household_id: str, box_id: str, brightness: int) -> None:
+    async def set_bedtime_lightring_brightness(
+        self, household_id: str, box_id: str, brightness: int
+    ) -> None:
         if self._client is None:
             raise RuntimeError("API client not initialised")
-        await self._client.tonies.set_bedtime_lightring_brightness(household_id, box_id, brightness)
+        await self._client.tonies.set_bedtime_lightring_brightness(
+            household_id, box_id, brightness
+        )

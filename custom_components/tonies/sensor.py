@@ -1,10 +1,13 @@
 """Sensor platform for Tonies."""
+
 from __future__ import annotations
 
 import logging
 
 from homeassistant.components.sensor import (
-    SensorDeviceClass, SensorEntity, SensorStateClass,
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE
@@ -15,8 +18,11 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
-    DATA_COORDINATOR, DOMAIN,
-    UNIQUE_ID_SENSOR_BATTERY, UNIQUE_ID_SENSOR_ONLINE, UNIQUE_ID_SENSOR_TONIE,
+    DATA_COORDINATOR,
+    DOMAIN,
+    UNIQUE_ID_SENSOR_BATTERY,
+    UNIQUE_ID_SENSOR_ONLINE,
+    UNIQUE_ID_SENSOR_TONIE,
 )
 from .coordinator import ToniesCoordinator
 from .entity import ToniesBaseEntity
@@ -35,7 +41,9 @@ def _library_device_info(entry_id: str) -> DeviceInfo:
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback,
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: ToniesCoordinator = hass.data[DOMAIN][entry.entry_id][DATA_COORDINATOR]
     entities: list[SensorEntity] = []
@@ -65,6 +73,7 @@ async def async_setup_entry(
 # ---------------------------------------------------------------------------
 # TNG-only sensors (per box)
 # ---------------------------------------------------------------------------
+
 
 class TonieBatterySensor(ToniesBaseEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.BATTERY
@@ -101,7 +110,7 @@ class ToniesTonieSensor(ToniesBaseEntity, SensorEntity):
     def extra_state_attributes(self) -> dict:
         ws = self._ws
         return {
-            "tonie_id":        ws.get("tonie_id"),
+            "tonie_id": ws.get("tonie_id"),
             "tonie_image_url": ws.get("tonie_image"),
         }
 
@@ -125,6 +134,7 @@ class ToniesOnlineSensor(ToniesBaseEntity, SensorEntity):
 # ---------------------------------------------------------------------------
 # Tonies Library device — virtual device grouping all tonies
 # ---------------------------------------------------------------------------
+
 
 class ToniesLibrarySensor(SensorEntity):
     """Count sensor for the library device (total tonies owned)."""
@@ -157,7 +167,7 @@ class ToniesLibrarySensor(SensorEntity):
     def extra_state_attributes(self) -> dict:
         tonies = self._coordinator.get_all_tonies()
         return {
-            "content_count":  sum(1 for t in tonies if t.get("type") == "content"),
+            "content_count": sum(1 for t in tonies if t.get("type") == "content"),
             "creative_count": sum(1 for t in tonies if t.get("type") == "creative"),
         }
 
@@ -208,9 +218,9 @@ class ContentTonieSensor(CoordinatorEntity[ToniesCoordinator], SensorEntity):
         if t is None:
             return {}
         return {
-            "tonie_id":  t.id,
+            "tonie_id": t.id,
             "cover_url": t.cover_url,
-            "series":    t.series.name if t.series else None,
+            "series": t.series.name if t.series else None,
         }
 
 
@@ -256,6 +266,6 @@ class CreativeTonieSensor(CoordinatorEntity[ToniesCoordinator], SensorEntity):
             return {}
         return {
             "tonie_id": t.id,
-            "live":     t.live,
+            "live": t.live,
             "chapters": len(t.chapters or []),
         }

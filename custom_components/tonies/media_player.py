@@ -1,4 +1,5 @@
 """Media player platform for Tonies."""
+
 from __future__ import annotations
 
 import logging
@@ -14,9 +15,16 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
-    ATTR_HEADPHONES, ATTR_HOUSEHOLD_ID, ATTR_MAC_ADDRESS,
-    ATTR_TONIE_ID, ATTR_TONIE_IMAGE, ATTR_TONIE_NAME,
-    CLASSIC_VOLUME_STEPS, DATA_COORDINATOR, DOMAIN, UNIQUE_ID_MEDIA_PLAYER,
+    ATTR_HEADPHONES,
+    ATTR_HOUSEHOLD_ID,
+    ATTR_MAC_ADDRESS,
+    ATTR_TONIE_ID,
+    ATTR_TONIE_IMAGE,
+    ATTR_TONIE_NAME,
+    CLASSIC_VOLUME_STEPS,
+    DATA_COORDINATOR,
+    DOMAIN,
+    UNIQUE_ID_MEDIA_PLAYER,
 )
 from .coordinator import ToniesCoordinator
 from .entity import ToniesBaseEntity
@@ -31,16 +39,19 @@ _FEATURES_TNG = (
 )
 # Classic: volume par paliers uniquement, pas de sleep
 _FEATURES_CLASSIC = (
-    MediaPlayerEntityFeature.VOLUME_SET
-    | MediaPlayerEntityFeature.VOLUME_STEP
+    MediaPlayerEntityFeature.VOLUME_SET | MediaPlayerEntityFeature.VOLUME_STEP
 )
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback,
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: ToniesCoordinator = hass.data[DOMAIN][entry.entry_id][DATA_COORDINATOR]
-    async_add_entities([ToniesMediaPlayer(coordinator, b.id) for b in coordinator.data.boxes])
+    async_add_entities(
+        [ToniesMediaPlayer(coordinator, b.id) for b in coordinator.data.boxes]
+    )
 
 
 class ToniesMediaPlayer(ToniesBaseEntity, MediaPlayerEntity):
@@ -109,13 +120,13 @@ class ToniesMediaPlayer(ToniesBaseEntity, MediaPlayerEntity):
         attrs: dict[str, Any] = {"tng": self.is_tng}
         if box:
             attrs[ATTR_HOUSEHOLD_ID] = box.household_id
-            attrs[ATTR_MAC_ADDRESS]  = box.mac_address
+            attrs[ATTR_MAC_ADDRESS] = box.mac_address
         if self.is_tng:
             ws = self._ws
-            attrs[ATTR_TONIE_ID]    = ws.get("tonie_id")
-            attrs[ATTR_TONIE_NAME]  = ws.get("tonie_name")
+            attrs[ATTR_TONIE_ID] = ws.get("tonie_id")
+            attrs[ATTR_TONIE_NAME] = ws.get("tonie_name")
             attrs[ATTR_TONIE_IMAGE] = ws.get("tonie_image")
-            attrs[ATTR_HEADPHONES]  = ws.get("headphones", False)
+            attrs[ATTR_HEADPHONES] = ws.get("headphones", False)
         return attrs
 
     # ------------------------------------------------------------------

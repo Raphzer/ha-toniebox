@@ -1,4 +1,5 @@
 """The Tonies integration."""
+
 from __future__ import annotations
 
 import logging
@@ -24,7 +25,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     try:
         await coordinator.async_setup()
     except Exception as err:
-        raise ConfigEntryNotReady(f"Failed to set up Tonies integration: {err}") from err
+        raise ConfigEntryNotReady(
+            f"Failed to set up Tonies integration: {err}"
+        ) from err
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {DATA_COORDINATOR: coordinator}
@@ -46,10 +49,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.bus.async_fire(
             f"{DOMAIN}_list_result",
             {
-                "total":          len(all_tonies),
-                "content_count":  sum(1 for t in all_tonies if t.get("type") == "content"),
-                "creative_count": sum(1 for t in all_tonies if t.get("type") == "creative"),
-                "tonies":         all_tonies,
+                "total": len(all_tonies),
+                "content_count": sum(
+                    1 for t in all_tonies if t.get("type") == "content"
+                ),
+                "creative_count": sum(
+                    1 for t in all_tonies if t.get("type") == "creative"
+                ),
+                "tonies": all_tonies,
             },
         )
         _LOGGER.debug("Fired %s_list_result with %d tonies", DOMAIN, len(all_tonies))
@@ -70,7 +77,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok:
-        coordinator: ToniesCoordinator = hass.data[DOMAIN][entry.entry_id][DATA_COORDINATOR]
+        coordinator: ToniesCoordinator = hass.data[DOMAIN][entry.entry_id][
+            DATA_COORDINATOR
+        ]
         await coordinator.async_teardown()
         hass.data[DOMAIN].pop(entry.entry_id)
 

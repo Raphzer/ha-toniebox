@@ -1,4 +1,5 @@
 """Number platform for Tonies — volume and LED brightness controls."""
+
 from __future__ import annotations
 
 import logging
@@ -9,9 +10,15 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
-    CLASSIC_VOLUME_STEPS, DATA_COORDINATOR, DOMAIN,
-    UNIQUE_ID_NUMBER_HP_VOL, UNIQUE_ID_NUMBER_LED_BRIGHTNESS, UNIQUE_ID_NUMBER_VOLUME,
-    UNIQUE_ID_NUMBER_BEDTIME_VOLUME, UNIQUE_ID_NUMBER_BEDTIME_HP_VOL, UNIQUE_ID_NUMBER_BEDTIME_LED,
+    CLASSIC_VOLUME_STEPS,
+    DATA_COORDINATOR,
+    DOMAIN,
+    UNIQUE_ID_NUMBER_HP_VOL,
+    UNIQUE_ID_NUMBER_LED_BRIGHTNESS,
+    UNIQUE_ID_NUMBER_VOLUME,
+    UNIQUE_ID_NUMBER_BEDTIME_VOLUME,
+    UNIQUE_ID_NUMBER_BEDTIME_HP_VOL,
+    UNIQUE_ID_NUMBER_BEDTIME_LED,
 )
 from .coordinator import ToniesCoordinator
 from .entity import ToniesBaseEntity
@@ -20,7 +27,9 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback,
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: ToniesCoordinator = hass.data[DOMAIN][entry.entry_id][DATA_COORDINATOR]
     entities: list[NumberEntity] = []
@@ -133,7 +142,9 @@ class TngLedBrightnessNumber(ToniesBaseEntity, NumberEntity):
         box = self._box
         if box is None:
             return
-        await self.coordinator.set_lightring_brightness(box.household_id, box.id, round(value))
+        await self.coordinator.set_lightring_brightness(
+            box.household_id, box.id, round(value)
+        )
         await self.coordinator.async_request_refresh()
 
 
@@ -163,7 +174,9 @@ class TngBedtimeSpeakerVolumeNumber(ToniesBaseEntity, NumberEntity):
         box = self._box
         if box is None:
             return
-        await self.coordinator.set_bedtime_volume(box.household_id, box.id, round(value))
+        await self.coordinator.set_bedtime_volume(
+            box.household_id, box.id, round(value)
+        )
         await self.coordinator.async_request_refresh()
 
 
@@ -193,7 +206,9 @@ class TngBedtimeHeadphoneVolumeNumber(ToniesBaseEntity, NumberEntity):
         box = self._box
         if box is None:
             return
-        await self.coordinator.set_bedtime_headphone_volume(box.household_id, box.id, round(value))
+        await self.coordinator.set_bedtime_headphone_volume(
+            box.household_id, box.id, round(value)
+        )
         await self.coordinator.async_request_refresh()
 
 
@@ -223,5 +238,7 @@ class TngBedtimeLedBrightnessNumber(ToniesBaseEntity, NumberEntity):
         box = self._box
         if box is None:
             return
-        await self.coordinator.set_bedtime_lightring_brightness(box.household_id, box.id, round(value))
+        await self.coordinator.set_bedtime_lightring_brightness(
+            box.household_id, box.id, round(value)
+        )
         await self.coordinator.async_request_refresh()
