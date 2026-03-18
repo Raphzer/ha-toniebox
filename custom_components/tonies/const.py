@@ -20,8 +20,9 @@ UNIQUE_ID_SENSOR_TONIE    = "toniebox_tonie"
 UNIQUE_ID_SENSOR_ONLINE   = "toniebox_online"
 UNIQUE_ID_SWITCH_SLEEP    = "toniebox_sleep"
 UNIQUE_ID_SELECT_LED      = "toniebox_led"
-UNIQUE_ID_NUMBER_VOLUME   = "toniebox_volume"
-UNIQUE_ID_NUMBER_HP_VOL   = "toniebox_headphone_volume"
+UNIQUE_ID_NUMBER_VOLUME        = "toniebox_volume"
+UNIQUE_ID_NUMBER_HP_VOL        = "toniebox_headphone_volume"
+UNIQUE_ID_NUMBER_LED_BRIGHTNESS = "toniebox_led_brightness"
 
 # Attribute names
 ATTR_TONIE_NAME     = "tonie_name"

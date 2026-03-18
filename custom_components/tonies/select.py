@@ -19,7 +19,12 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: ToniesCoordinator = hass.data[DOMAIN][entry.entry_id][DATA_COORDINATOR]
-    async_add_entities([ToniesLedSelect(coordinator, b.id) for b in coordinator.data.boxes])
+    # LED select (on/dimmed/off) — Classic only; TNG uses a brightness number entity
+    async_add_entities([
+        ToniesLedSelect(coordinator, b.id)
+        for b in coordinator.data.boxes
+        if not getattr(b, "is_tng", False)
+    ])
 
 
 class ToniesLedSelect(ToniesBaseEntity, SelectEntity):
