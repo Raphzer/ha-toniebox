@@ -1,16 +1,16 @@
 {
   "domain": "tonies",
   "name": "Tonies",
-  "version": "0.1.0",
-  "documentation": "https://github.com/Raphzer/ha-toniebox",
-  "issue_tracker": "https://github.com/Raphzer/ha-toniebox/issues",
-  "dependencies": [],
   "codeowners": [
     "@Raphzer"
   ],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/Raphzer/ha-toniebox",
+  "iot_class": "cloud_push",
+  "issue_tracker": "https://github.com/Raphzer/ha-toniebox/issues",
   "requirements": [
     "tonies-api>=0.1.4"
   ],
-  "iot_class": "cloud_push",
-  "config_flow": true
+  "version": "0.1.0"
 }
