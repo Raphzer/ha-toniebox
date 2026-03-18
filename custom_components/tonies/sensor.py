@@ -9,8 +9,10 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity import EntityCategory
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
     DATA_COORDINATOR, DOMAIN,
@@ -22,6 +24,16 @@ from .entity import ToniesBaseEntity
 _LOGGER = logging.getLogger(__name__)
 
 
+def _library_device_info(entry_id: str) -> DeviceInfo:
+    """DeviceInfo for the virtual Tonies Library device."""
+    return DeviceInfo(
+        identifiers={(DOMAIN, f"tonies_library_{entry_id}")},
+        name="Tonies Library",
+        manufacturer="Boxine",
+        entry_type=DeviceEntryType.SERVICE,
+    )
+
+
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback,
 ) -> None:
@@ -30,7 +42,6 @@ async def async_setup_entry(
 
     for box in coordinator.data.boxes:
         if getattr(box, "is_tng", False):
-            # TNG only: real-time sensors
             entities += [
                 TonieBatterySensor(coordinator, box.id),
                 ToniesTonieSensor(coordinator, box.id),
@@ -39,14 +50,20 @@ async def async_setup_entry(
         else:
             _LOGGER.debug("Classic box %s: skipping real-time sensors", box.name)
 
-    # Tonies catalogue sensor — one global sensor per integration entry
+    # Library device — count sensor + one entity per tonie
     entities.append(ToniesLibrarySensor(coordinator, entry.entry_id))
+
+    for hwt in coordinator.data.households_with_tonies.values():
+        for tonie in hwt.content_tonies or []:
+            entities.append(ContentTonieSensor(coordinator, entry.entry_id, tonie))
+        for tonie in hwt.creative_tonies or []:
+            entities.append(CreativeTonieSensor(coordinator, entry.entry_id, tonie))
 
     async_add_entities(entities)
 
 
 # ---------------------------------------------------------------------------
-# TNG-only sensors
+# TNG-only sensors (per box)
 # ---------------------------------------------------------------------------
 
 class TonieBatterySensor(ToniesBaseEntity, SensorEntity):
@@ -106,19 +123,16 @@ class ToniesOnlineSensor(ToniesBaseEntity, SensorEntity):
 
 
 # ---------------------------------------------------------------------------
-# Tonies library sensor — all boxes, attached to first box device (or standalone)
+# Tonies Library device — virtual device grouping all tonies
 # ---------------------------------------------------------------------------
 
 class ToniesLibrarySensor(SensorEntity):
-    """Global sensor showing Tonies counts.
+    """Count sensor for the library device (total tonies owned)."""
 
-    State = total count.
-    Attributes = counts only (no full list — too large for HA DB).
-    Use the service tonies.get_tonies_list to retrieve the full catalogue.
-    """
     _attr_has_entity_name = True
-    _attr_name = "Tonies Library"
+    _attr_name = "Count"
     _attr_icon = "mdi:bookshelf"
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator: ToniesCoordinator, entry_id: str) -> None:
@@ -126,6 +140,10 @@ class ToniesLibrarySensor(SensorEntity):
         self._coordinator = coordinator
         self._entry_id = entry_id
         self._attr_unique_id = f"tonies_library_{entry_id}"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return _library_device_info(self._entry_id)
 
     @property
     def should_poll(self) -> bool:
@@ -147,3 +165,97 @@ class ToniesLibrarySensor(SensorEntity):
         self.async_on_remove(
             self._coordinator.async_add_listener(self.async_write_ha_state)
         )
+
+
+class ContentTonieSensor(CoordinatorEntity[ToniesCoordinator], SensorEntity):
+    """One sensor per content tonie (physical figurine from the catalogue)."""
+
+    _attr_has_entity_name = False
+    _attr_icon = "mdi:music-box"
+
+    def __init__(self, coordinator: ToniesCoordinator, entry_id: str, tonie) -> None:
+        super().__init__(coordinator)
+        self._entry_id = entry_id
+        self._tonie_id = tonie.id
+        self._attr_unique_id = f"tonies_content_{tonie.id}"
+        self._attr_name = tonie.title
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return _library_device_info(self._entry_id)
+
+    @property
+    def _tonie(self):
+        for hwt in self.coordinator.data.households_with_tonies.values():
+            for t in hwt.content_tonies or []:
+                if t.id == self._tonie_id:
+                    return t
+        return None
+
+    @property
+    def native_value(self) -> str | None:
+        t = self._tonie
+        return t.title if t else None
+
+    @property
+    def entity_picture(self) -> str | None:
+        t = self._tonie
+        return t.image_url if t else None
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        t = self._tonie
+        if t is None:
+            return {}
+        return {
+            "tonie_id":  t.id,
+            "cover_url": t.cover_url,
+            "series":    t.series.name if t.series else None,
+        }
+
+
+class CreativeTonieSensor(CoordinatorEntity[ToniesCoordinator], SensorEntity):
+    """One sensor per creative tonie (recordable figurine)."""
+
+    _attr_has_entity_name = False
+    _attr_icon = "mdi:microphone"
+
+    def __init__(self, coordinator: ToniesCoordinator, entry_id: str, tonie) -> None:
+        super().__init__(coordinator)
+        self._entry_id = entry_id
+        self._tonie_id = tonie.id
+        self._attr_unique_id = f"tonies_creative_{tonie.id}"
+        self._attr_name = tonie.name
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return _library_device_info(self._entry_id)
+
+    @property
+    def _tonie(self):
+        for hwt in self.coordinator.data.households_with_tonies.values():
+            for t in hwt.creative_tonies or []:
+                if t.id == self._tonie_id:
+                    return t
+        return None
+
+    @property
+    def native_value(self) -> str | None:
+        t = self._tonie
+        return t.name if t else None
+
+    @property
+    def entity_picture(self) -> str | None:
+        t = self._tonie
+        return t.image_url if t else None
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        t = self._tonie
+        if t is None:
+            return {}
+        return {
+            "tonie_id": t.id,
+            "live":     t.live,
+            "chapters": len(t.chapters or []),
+        }
