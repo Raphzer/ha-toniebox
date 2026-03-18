@@ -9,7 +9,7 @@
     "@Raphzer"
   ],
   "requirements": [
-    "tonies-api @ git+https://github.com/Raphzer/tonies-api.git"
+    "tonies-api>=0.1.4"
   ],
   "iot_class": "cloud_push",
   "config_flow": true
