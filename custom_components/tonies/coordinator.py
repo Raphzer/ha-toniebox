@@ -320,3 +320,13 @@ class ToniesCoordinator(DataUpdateCoordinator[ToniesData]):
         if self._client is None:
             raise RuntimeError("API client not initialised")
         await self._client.tonies.set_bedtime_max_volume(household_id, box_id, volume)
+
+    async def set_bedtime_headphone_volume(self, household_id: str, box_id: str, volume: int) -> None:
+        if self._client is None:
+            raise RuntimeError("API client not initialised")
+        await self._client.tonies.set_bedtime_headphone_max_volume(household_id, box_id, volume)
+
+    async def set_bedtime_lightring_brightness(self, household_id: str, box_id: str, brightness: int) -> None:
+        if self._client is None:
+            raise RuntimeError("API client not initialised")
+        await self._client.tonies.set_bedtime_lightring_brightness(household_id, box_id, brightness)

@@ -11,6 +11,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import (
     CLASSIC_VOLUME_STEPS, DATA_COORDINATOR, DOMAIN,
     UNIQUE_ID_NUMBER_HP_VOL, UNIQUE_ID_NUMBER_LED_BRIGHTNESS, UNIQUE_ID_NUMBER_VOLUME,
+    UNIQUE_ID_NUMBER_BEDTIME_VOLUME, UNIQUE_ID_NUMBER_BEDTIME_HP_VOL, UNIQUE_ID_NUMBER_BEDTIME_LED,
 )
 from .coordinator import ToniesCoordinator
 from .entity import ToniesBaseEntity
@@ -28,6 +29,9 @@ async def async_setup_entry(
         if getattr(box, "is_tng", False):
             entities.append(TngSpeakerVolumeNumber(coordinator, box.id))
             entities.append(TngLedBrightnessNumber(coordinator, box.id))
+            entities.append(TngBedtimeSpeakerVolumeNumber(coordinator, box.id))
+            entities.append(TngBedtimeHeadphoneVolumeNumber(coordinator, box.id))
+            entities.append(TngBedtimeLedBrightnessNumber(coordinator, box.id))
     async_add_entities(entities)
 
 
@@ -130,4 +134,94 @@ class TngLedBrightnessNumber(ToniesBaseEntity, NumberEntity):
         if box is None:
             return
         await self.coordinator.set_lightring_brightness(box.household_id, box.id, round(value))
+        await self.coordinator.async_request_refresh()
+
+
+class TngBedtimeSpeakerVolumeNumber(ToniesBaseEntity, NumberEntity):
+    """Bedtime max speaker volume — TNG only, 25-100% in 1% steps."""
+
+    _attr_name = "Bedtime Max Volume"
+    _attr_icon = "mdi:volume-off"
+    _attr_mode = NumberMode.SLIDER
+    _attr_native_unit_of_measurement = "%"
+    _attr_native_min_value = 25.0
+    _attr_native_max_value = 100.0
+    _attr_native_step = 1.0
+
+    def __init__(self, coordinator: ToniesCoordinator, box_id: str) -> None:
+        super().__init__(coordinator, box_id)
+        self._attr_unique_id = f"{UNIQUE_ID_NUMBER_BEDTIME_VOLUME}_{box_id}"
+
+    @property
+    def native_value(self) -> float | None:
+        box = self._box
+        if box is None or box.bedtime_max_volume is None:
+            return None
+        return float(box.bedtime_max_volume)
+
+    async def async_set_native_value(self, value: float) -> None:
+        box = self._box
+        if box is None:
+            return
+        await self.coordinator.set_bedtime_volume(box.household_id, box.id, round(value))
+        await self.coordinator.async_request_refresh()
+
+
+class TngBedtimeHeadphoneVolumeNumber(ToniesBaseEntity, NumberEntity):
+    """Bedtime max headphone volume — TNG only, 25-100% in 1% steps."""
+
+    _attr_name = "Bedtime Max Headphone Volume"
+    _attr_icon = "mdi:headphones-off"
+    _attr_mode = NumberMode.SLIDER
+    _attr_native_unit_of_measurement = "%"
+    _attr_native_min_value = 25.0
+    _attr_native_max_value = 100.0
+    _attr_native_step = 1.0
+
+    def __init__(self, coordinator: ToniesCoordinator, box_id: str) -> None:
+        super().__init__(coordinator, box_id)
+        self._attr_unique_id = f"{UNIQUE_ID_NUMBER_BEDTIME_HP_VOL}_{box_id}"
+
+    @property
+    def native_value(self) -> float | None:
+        box = self._box
+        if box is None or box.bedtime_max_headphone_volume is None:
+            return None
+        return float(box.bedtime_max_headphone_volume)
+
+    async def async_set_native_value(self, value: float) -> None:
+        box = self._box
+        if box is None:
+            return
+        await self.coordinator.set_bedtime_headphone_volume(box.household_id, box.id, round(value))
+        await self.coordinator.async_request_refresh()
+
+
+class TngBedtimeLedBrightnessNumber(ToniesBaseEntity, NumberEntity):
+    """Bedtime light ring brightness — TNG only, 0-100% in 1% steps."""
+
+    _attr_name = "Bedtime LED Brightness"
+    _attr_icon = "mdi:led-off"
+    _attr_mode = NumberMode.SLIDER
+    _attr_native_unit_of_measurement = "%"
+    _attr_native_min_value = 0.0
+    _attr_native_max_value = 100.0
+    _attr_native_step = 1.0
+
+    def __init__(self, coordinator: ToniesCoordinator, box_id: str) -> None:
+        super().__init__(coordinator, box_id)
+        self._attr_unique_id = f"{UNIQUE_ID_NUMBER_BEDTIME_LED}_{box_id}"
+
+    @property
+    def native_value(self) -> float | None:
+        box = self._box
+        if box is None or box.bedtime_lightring_brightness is None:
+            return None
+        return float(box.bedtime_lightring_brightness)
+
+    async def async_set_native_value(self, value: float) -> None:
+        box = self._box
+        if box is None:
+            return
+        await self.coordinator.set_bedtime_lightring_brightness(box.household_id, box.id, round(value))
         await self.coordinator.async_request_refresh()
