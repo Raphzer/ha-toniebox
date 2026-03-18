@@ -28,6 +28,8 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
 
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
     """Validate credentials by attempting authentication."""
+    from tonies_api.exceptions import ToniesApiError, TonieAuthError
+
     try:
         # Instanciation bloquante (SSL certifi) → thread pool
         client = await hass.async_add_executor_job(
@@ -36,9 +38,15 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
         async with client:
             user = await client.tonies.get_user_details()
             return {"title": f"Tonies ({user.email})"}
-    except Exception as err:
+    except TonieAuthError as err:
         _LOGGER.error("Authentication failed: %s", err)
         raise InvalidAuth from err
+    except ToniesApiError as err:
+        _LOGGER.error("Tonies API error during setup: %s", err)
+        raise CannotConnect from err
+    except Exception as err:
+        _LOGGER.exception("Unexpected error during Tonies authentication: %s", err)
+        raise CannotConnect from err
 
 
 class ToniesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -57,6 +65,8 @@ class ToniesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 info = await validate_input(self.hass, user_input)
             except InvalidAuth:
                 errors["base"] = "invalid_auth"
+            except CannotConnect:
+                errors["base"] = "cannot_connect"
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception("Unexpected exception during Tonies setup")
                 errors["base"] = "unknown"
@@ -74,3 +84,7 @@ class ToniesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 class InvalidAuth(HomeAssistantError):
     """Error to indicate invalid authentication."""
+
+
+class CannotConnect(HomeAssistantError):
+    """Error to indicate a connection failure (network, API down)."""

@@ -12,6 +12,7 @@
     },
     "error": {
       "invalid_auth": "Identifiants invalides. Vérifiez votre e-mail et mot de passe.",
+      "cannot_connect": "Impossible de contacter l'API Tonies. Réessayez plus tard.",
       "unknown": "Une erreur inattendue s'est produite."
     },
     "abort": {

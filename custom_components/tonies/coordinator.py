@@ -91,10 +91,21 @@ class ToniesCoordinator(DataUpdateCoordinator[ToniesData]):
             raise UpdateFailed("API client not initialised")
         try:
             self.data.boxes = await self._client.tonies.get_households_boxes()
+            _LOGGER.debug("Fetched %d box(es): %s", len(self.data.boxes), [b.name for b in self.data.boxes])
+
             households = await self._client.tonies.get_tonies()
+            _LOGGER.debug("Fetched %d household(s)", len(households))
 
             # HouseholdWithTonies extends Household — the id field IS the household id
             self.data.households_with_tonies = {h.id: h for h in households}
+
+            for hwt in households:
+                _LOGGER.debug(
+                    "Household '%s': %d content tonie(s), %d creative tonie(s)",
+                    hwt.name,
+                    len(hwt.content_tonies or []),
+                    len(hwt.creative_tonies or []),
+                )
 
         except ToniesApiError as err:
             raise UpdateFailed(f"Tonies API error: {err}") from err
@@ -110,9 +121,11 @@ class ToniesCoordinator(DataUpdateCoordinator[ToniesData]):
         """Connect with non-blocking SSL — certifi certs loaded in thread pool."""
         import certifi
 
-        certs_data: bytes = await self.hass.async_add_executor_job(
-            lambda: open(certifi.where(), "rb").read()
-        )
+        def _read_certs() -> bytes:
+            with open(certifi.where(), "rb") as f:
+                return f.read()
+
+        certs_data: bytes = await self.hass.async_add_executor_job(_read_certs)
 
         import ssl
         _orig = ssl.create_default_context

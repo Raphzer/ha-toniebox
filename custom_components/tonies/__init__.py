@@ -7,6 +7,7 @@ import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.exceptions import ConfigEntryNotReady
 
 from .const import DATA_COORDINATOR, DOMAIN, PLATFORMS
 from .coordinator import ToniesCoordinator
@@ -23,8 +24,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     try:
         await coordinator.async_setup()
     except Exception as err:
-        _LOGGER.error("Failed to set up Tonies integration: %s", err)
-        return False
+        raise ConfigEntryNotReady(f"Failed to set up Tonies integration: {err}") from err
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {DATA_COORDINATOR: coordinator}

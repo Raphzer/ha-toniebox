@@ -122,6 +122,7 @@ class ToniesLibrarySensor(SensorEntity):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator: ToniesCoordinator, entry_id: str) -> None:
+        super().__init__()
         self._coordinator = coordinator
         self._entry_id = entry_id
         self._attr_unique_id = f"tonies_library_{entry_id}"
