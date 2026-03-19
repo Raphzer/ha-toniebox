@@ -22,6 +22,7 @@ from .const import (
     DATA_COORDINATOR,
     DOMAIN,
     UNIQUE_ID_SENSOR_BATTERY,
+    UNIQUE_ID_SENSOR_CHAPTER,
     UNIQUE_ID_SENSOR_ONLINE,
     UNIQUE_ID_SENSOR_TONIE,
 )
@@ -55,6 +56,7 @@ async def async_setup_entry(
                 TonieBatterySensor(coordinator, box.id),
                 ToniesTonieSensor(coordinator, box.id),
                 ToniesOnlineSensor(coordinator, box.id),
+                ToniesChapterSensor(coordinator, box.id),
             ]
         else:
             _LOGGER.debug("Classic box %s: skipping real-time sensors", box.name)
@@ -108,6 +110,10 @@ class ToniesTonieSensor(ToniesBaseEntity, SensorEntity):
         return self._ws.get("tonie_name")
 
     @property
+    def entity_picture(self) -> str | None:
+        return self._ws.get("tonie_image") or None
+
+    @property
     def extra_state_attributes(self) -> dict:
         ws = self._ws
         attrs: dict = {
@@ -139,6 +145,35 @@ class ToniesOnlineSensor(ToniesBaseEntity, SensorEntity):
         if online is None:
             return "unknown"
         return "online" if online else "offline"
+
+
+class ToniesChapterSensor(ToniesBaseEntity, SensorEntity):
+    """Current chapter number and duration — TNG only."""
+
+    _attr_name = "Chapter"
+    _attr_icon = "mdi:book-open-page-variant"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, coordinator: ToniesCoordinator, box_id: str) -> None:
+        super().__init__(coordinator, box_id)
+        self._attr_unique_id = f"{UNIQUE_ID_SENSOR_CHAPTER}_{box_id}"
+
+    @property
+    def native_value(self) -> int | None:
+        return self._ws.get("chapter")
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        ws = self._ws
+        attrs: dict = {}
+        chapter_duration = ws.get("chapter_duration")
+        if chapter_duration is not None:
+            attrs["chapter_duration_s"] = round(chapter_duration)
+        chapter_until_ms = ws.get("chapter_until_ms")
+        if chapter_until_ms is not None:
+            remaining_s = max(0, chapter_until_ms / 1000 - time.time())
+            attrs["chapter_remaining_s"] = round(remaining_s)
+        return attrs
 
 
 # ---------------------------------------------------------------------------
