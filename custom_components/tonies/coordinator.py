@@ -204,13 +204,14 @@ class ToniesCoordinator(DataUpdateCoordinator[ToniesData]):
         _LOGGER.debug("WS [%s] %s → %s", box.name, event, payload)
 
         if "online-state" in event:
-            # payload: {'onlineState': 'online'} or {'onlineState': 'offline'}
+            # payload: {'onlineState': 'online'|'connected'} or {'onlineState': 'offline'}
+            _ONLINE_VALUES = {"online", "connected"}
             if isinstance(payload, dict):
                 state["online"] = (
-                    str(payload.get("onlineState", "")).lower() == "online"
+                    str(payload.get("onlineState", "")).lower() in _ONLINE_VALUES
                 )
             elif isinstance(payload, str):
-                state["online"] = payload.lower() == "online"
+                state["online"] = payload.lower() in _ONLINE_VALUES
             else:
                 state["online"] = bool(payload)
 
@@ -225,6 +226,7 @@ class ToniesCoordinator(DataUpdateCoordinator[ToniesData]):
 
         elif "playback/state" in event:
             # payload: {'tonie': {'id': '...', 'name': '...', 'imageUrl': '...'}}
+            # or payload: {'tonie': '<id_string>'} (TNG compact format)
             # or payload: {'tonie': None} when removed
             _LOGGER.debug("Playback raw payload: %s", payload)
             if isinstance(payload, dict):
@@ -233,6 +235,12 @@ class ToniesCoordinator(DataUpdateCoordinator[ToniesData]):
                     state["tonie_id"] = tonie.get("id")
                     state["tonie_name"] = tonie.get("name") or tonie.get("tonieName")
                     state["tonie_image"] = tonie.get("imageUrl") or tonie.get("image")
+                elif isinstance(tonie, str):
+                    # Compact format: tonie is just the ID string — look up name/image
+                    state["tonie_id"] = tonie
+                    found = self._find_tonie_by_id(tonie)
+                    state["tonie_name"] = found.get("name") if found else tonie
+                    state["tonie_image"] = found.get("image_url") if found else None
                 elif tonie is None:
                     state["tonie_id"] = None
                     state["tonie_name"] = None
@@ -250,6 +258,13 @@ class ToniesCoordinator(DataUpdateCoordinator[ToniesData]):
     # ------------------------------------------------------------------
     # Helpers for entities
     # ------------------------------------------------------------------
+
+    def _find_tonie_by_id(self, tonie_id: str) -> dict | None:
+        """Look up a tonie by ID across all households. Returns the tonie dict or None."""
+        for t in self.get_all_tonies():
+            if t.get("id") == tonie_id:
+                return t
+        return None
 
     def get_box(self, box_id: str) -> Any | None:
         return next((b for b in self.data.boxes if b.id == box_id), None)
