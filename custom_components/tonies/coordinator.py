@@ -245,6 +245,14 @@ class ToniesCoordinator(DataUpdateCoordinator[ToniesData]):
                     state["tonie_id"] = None
                     state["tonie_name"] = None
                     state["tonie_image"] = None
+                    state["chapter"] = None
+                    state["chapter_until_ms"] = None
+                    state["chapter_duration"] = None
+                # Chapter info (present in compact format)
+                if tonie is not None:
+                    state["chapter"] = payload.get("chapter")
+                    state["chapter_until_ms"] = payload.get("chapterUntilMs")
+                    state["chapter_duration"] = payload.get("chapterDuration")
 
         elif "metrics/headphones" in event:
             # payload: {'connected': True}
@@ -260,9 +268,10 @@ class ToniesCoordinator(DataUpdateCoordinator[ToniesData]):
     # ------------------------------------------------------------------
 
     def _find_tonie_by_id(self, tonie_id: str) -> dict | None:
-        """Look up a tonie by ID across all households. Returns the tonie dict or None."""
+        """Look up a tonie by ID across all households (case-insensitive)."""
+        tonie_id_lower = tonie_id.lower()
         for t in self.get_all_tonies():
-            if t.get("id") == tonie_id:
+            if (t.get("id") or "").lower() == tonie_id_lower:
                 return t
         return None
 

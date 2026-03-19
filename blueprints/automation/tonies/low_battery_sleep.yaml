@@ -13,12 +13,12 @@ blueprint:
           domain: sensor
           device_class: battery
           integration: tonies
-    sleep_switch:
-      name: Switch Sleep
-      description: Le switch Sleep de la même Toniebox
+    sleep_button:
+      name: Bouton Sleep Now
+      description: Le bouton Sleep Now de la même Toniebox
       selector:
         entity:
-          domain: switch
+          domain: button
           integration: tonies
     threshold:
       name: Seuil batterie (%)
@@ -45,11 +45,6 @@ trigger:
     entity_id: !input battery_sensor
     below: !input threshold
 
-condition:
-  - condition: state
-    entity_id: !input sleep_switch
-    state: "off"
-
 action:
   - if:
       - condition: template
@@ -61,6 +56,6 @@ action:
           message: >
             La batterie est à {{ states(battery_sensor) }}%.
             La Toniebox va s'éteindre.
-  - service: switch.turn_on
+  - service: button.press
     target:
-      entity_id: !input sleep_switch
+      entity_id: !input sleep_button

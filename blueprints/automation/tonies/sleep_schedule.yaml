@@ -12,12 +12,12 @@ blueprint:
         entity:
           domain: media_player
           integration: tonies
-    sleep_switch:
-      name: Switch Sleep
-      description: Le switch Sleep de la même Toniebox TNG
+    sleep_button:
+      name: Bouton Sleep Now
+      description: Le bouton Sleep Now de la même Toniebox TNG
       selector:
         entity:
-          domain: switch
+          domain: button
           integration: tonies
     sleep_time:
       name: Heure de début du silence
@@ -65,6 +65,6 @@ condition:
               {% endif %}
 
 action:
-  - service: switch.turn_on
+  - service: button.press
     target:
-      entity_id: !input sleep_switch
+      entity_id: !input sleep_button

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -109,10 +110,19 @@ class ToniesTonieSensor(ToniesBaseEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict:
         ws = self._ws
-        return {
+        attrs: dict = {
             "tonie_id": ws.get("tonie_id"),
             "tonie_image_url": ws.get("tonie_image"),
+            "chapter": ws.get("chapter"),
         }
+        chapter_until_ms = ws.get("chapter_until_ms")
+        chapter_duration = ws.get("chapter_duration")
+        if chapter_until_ms is not None:
+            remaining_s = max(0, chapter_until_ms / 1000 - time.time())
+            attrs["chapter_remaining_s"] = round(remaining_s)
+        if chapter_duration is not None:
+            attrs["chapter_duration_s"] = round(chapter_duration)
+        return attrs
 
 
 class ToniesOnlineSensor(ToniesBaseEntity, SensorEntity):
