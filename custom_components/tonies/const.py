@@ -1,5 +1,7 @@
 """Constants for the Tonies integration."""
 
+from homeassistant.const import Platform
+
 DOMAIN = "tonies"
 
 CONF_USERNAME = "username"
@@ -11,14 +13,20 @@ DATA_COORDINATOR = "coordinator"
 POLLING_INTERVAL_SECONDS = 300  # 5 minutes
 
 # Platforms
-PLATFORMS = ["media_player", "sensor", "button", "select", "number"]
+PLATFORMS = [
+    Platform.BINARY_SENSOR,
+    Platform.BUTTON,
+    Platform.MEDIA_PLAYER,
+    Platform.NUMBER,
+    Platform.SELECT,
+    Platform.SENSOR,
+]
 
 # Entity unique id prefixes
 UNIQUE_ID_MEDIA_PLAYER = "toniebox_mediaplayer"
 UNIQUE_ID_SENSOR_BATTERY = "toniebox_battery"
 UNIQUE_ID_SENSOR_TONIE = "toniebox_tonie"
 UNIQUE_ID_SENSOR_ONLINE = "toniebox_online"
-UNIQUE_ID_SWITCH_SLEEP = "toniebox_sleep"
 UNIQUE_ID_BUTTON_SLEEP = "toniebox_sleep_button"
 UNIQUE_ID_SELECT_LED = "toniebox_led"
 UNIQUE_ID_NUMBER_VOLUME = "toniebox_volume"

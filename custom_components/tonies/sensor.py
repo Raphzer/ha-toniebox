@@ -23,7 +23,6 @@ from .const import (
     DOMAIN,
     UNIQUE_ID_SENSOR_BATTERY,
     UNIQUE_ID_SENSOR_CHAPTER,
-    UNIQUE_ID_SENSOR_ONLINE,
     UNIQUE_ID_SENSOR_TONIE,
 )
 from .coordinator import ToniesCoordinator
@@ -55,7 +54,6 @@ async def async_setup_entry(
             entities += [
                 TonieBatterySensor(coordinator, box.id),
                 ToniesTonieSensor(coordinator, box.id),
-                ToniesOnlineSensor(coordinator, box.id),
                 ToniesChapterSensor(coordinator, box.id),
             ]
         else:
@@ -129,22 +127,6 @@ class ToniesTonieSensor(ToniesBaseEntity, SensorEntity):
         if chapter_duration is not None:
             attrs["chapter_duration_s"] = round(chapter_duration)
         return attrs
-
-
-class ToniesOnlineSensor(ToniesBaseEntity, SensorEntity):
-    _attr_name = "Connection"
-    _attr_icon = "mdi:wifi"
-
-    def __init__(self, coordinator: ToniesCoordinator, box_id: str) -> None:
-        super().__init__(coordinator, box_id)
-        self._attr_unique_id = f"{UNIQUE_ID_SENSOR_ONLINE}_{box_id}"
-
-    @property
-    def native_value(self) -> str:
-        online = self._ws.get("online")
-        if online is None:
-            return "unknown"
-        return "online" if online else "offline"
 
 
 class ToniesChapterSensor(ToniesBaseEntity, SensorEntity):

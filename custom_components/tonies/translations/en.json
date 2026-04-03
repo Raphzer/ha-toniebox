@@ -18,5 +18,12 @@
     "abort": {
       "already_configured": "This Tonies account is already configured."
     }
+  },
+  "entity": {
+    "binary_sensor": {
+      "connection": {
+        "name": "Connection"
+      }
+    }
   }
 }

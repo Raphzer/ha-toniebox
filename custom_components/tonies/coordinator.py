@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import ssl
 from datetime import timedelta
 from typing import Any
 
+import certifi
 from tonies_api.client import TonieAPIClient
 from tonies_api.exceptions import ToniesApiError
 
@@ -54,8 +56,16 @@ class ToniesCoordinator(DataUpdateCoordinator[ToniesData]):
         username = self._entry.data[CONF_USERNAME]
         password = self._entry.data[CONF_PASSWORD]
 
-        self._client = await self.hass.async_add_executor_job(
-            TonieAPIClient, username, password
+        def _init_client_and_ssl():
+            client = TonieAPIClient(username, password)
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            ctx.verify_mode = ssl.CERT_REQUIRED
+            ctx.check_hostname = True
+            ctx.load_verify_locations(certifi.where())
+            return client, ctx
+
+        self._client, self._ssl_context = await self.hass.async_add_executor_job(
+            _init_client_and_ssl
         )
         await self._client.__aenter__()
         self._client.ws.register_callback(self._on_ws_event)
@@ -123,33 +133,11 @@ class ToniesCoordinator(DataUpdateCoordinator[ToniesData]):
     # ------------------------------------------------------------------
 
     async def _ws_connect(self) -> None:
-        """Connect with non-blocking SSL — certifi certs loaded in thread pool."""
-        import certifi
-
-        def _read_certs() -> bytes:
-            with open(certifi.where(), "rb") as f:
-                return f.read()
-
-        certs_data: bytes = await self.hass.async_add_executor_job(_read_certs)
-
-        import ssl
-
-        _orig = ssl.create_default_context
-
-        def _patched(*args, **kwargs):
-            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-            ctx.verify_mode = ssl.CERT_REQUIRED
-            ctx.check_hostname = True
-            ctx.load_verify_locations(cadata=certs_data.decode("utf-8"))
-            ctx.set_default_verify_paths = lambda: None
-            ctx.load_default_certs = lambda purpose=None: None
-            return ctx
-
-        ssl.create_default_context = _patched
-        try:
-            await self._client.ws.connect()
-        finally:
-            ssl.create_default_context = _orig
+        """Connect with pre-built SSL context — no global monkey-patching."""
+        # The tonies-api lib does not expose an ssl= parameter on ws.connect(),
+        # so we inject the context via the internal _ssl attribute before connecting.
+        self._client.ws._ssl = self._ssl_context
+        await self._client.ws.connect()
 
     async def _ws_listener(self) -> None:
         """Keep WebSocket alive; reconnection is handled by the lib itself."""

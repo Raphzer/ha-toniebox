@@ -11,12 +11,19 @@
       }
     },
     "error": {
-      "invalid_auth": "Identifiants invalides. Vérifiez votre e-mail et mot de passe.",
-      "cannot_connect": "Impossible de contacter l'API Tonies. Réessayez plus tard.",
+      "invalid_auth": "Identifiants invalides. V\u00e9rifiez votre e-mail et mot de passe.",
+      "cannot_connect": "Impossible de contacter l'API Tonies. R\u00e9essayez plus tard.",
       "unknown": "Une erreur inattendue s'est produite."
     },
     "abort": {
-      "already_configured": "Ce compte Tonies est déjà configuré."
+      "already_configured": "Ce compte Tonies est d\u00e9j\u00e0 configur\u00e9."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "connection": {
+        "name": "Connexion"
+      }
     }
   }
 }
