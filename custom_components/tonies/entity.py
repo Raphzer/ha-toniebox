@@ -39,5 +39,5 @@ class ToniesBaseEntity(CoordinatorEntity[ToniesCoordinator]):
             identifiers={(DOMAIN, self._box_id)},
             name=box.name if box else self._box_id,
             manufacturer="Boxine",
-            model="Toniebox Go" if self.is_tng else "Toniebox",
+            model="Gen 2" if self.is_tng else "Gen 1",
         )
