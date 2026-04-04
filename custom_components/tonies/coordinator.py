@@ -133,11 +133,23 @@ class ToniesCoordinator(DataUpdateCoordinator[ToniesData]):
     # ------------------------------------------------------------------
 
     async def _ws_connect(self) -> None:
-        """Connect with pre-built SSL context — no global monkey-patching."""
-        # The tonies-api lib does not expose an ssl= parameter on ws.connect(),
-        # so we inject the context via the internal _ssl attribute before connecting.
-        self._client.ws._ssl = self._ssl_context
-        await self._client.ws.connect()
+        """Connect using a pre-built certifi SSL context.
+
+        The tonies-api lib calls ssl.create_default_context() internally during
+        ws.connect(), triggering blocking I/O (load_default_certs,
+        set_default_verify_paths) on the event loop. We intercept the call to
+        return our pre-built context so no blocking I/O occurs. The patch is
+        restored in the finally block. The race window (between the first await
+        inside connect() and the finally) is acceptable: any concurrent caller
+        of create_default_context would receive our certifi-based context, which
+        is properly secured (CERT_REQUIRED + hostname check).
+        """
+        _orig = ssl.create_default_context
+        ssl.create_default_context = lambda *_a, **_kw: self._ssl_context
+        try:
+            await self._client.ws.connect()
+        finally:
+            ssl.create_default_context = _orig
 
     async def _ws_listener(self) -> None:
         """Keep WebSocket alive; reconnection is handled by the lib itself."""
